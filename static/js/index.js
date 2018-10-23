@@ -260,7 +260,10 @@ const postCell = () =>{
         type:'POST',
         contentType:'application/json',
         data:JSON.stringify({ points : buffer})
-    }).done(data => {}).fail(data => {});
+    }).done(function(data){
+        console.log("api/led post success");
+        console.log("data : " + data);
+    }).fail(data => {});
 }
 
 const postEffect = () =>{
@@ -280,7 +283,10 @@ const postEffect = () =>{
         type:'POST',
         contentType:'application/json',
         data:JSON.stringify(json_data)
-    }).done(data => {}).fail(data => {});
+    }).done(function(data){
+        console.log("api/filters post success");
+        console.log("data : " + data);
+    }).fail(data => {});
 }
 const postCells = () => {
     const now = Date.now();
@@ -293,7 +299,10 @@ const postCells = () => {
         type:'POST',
         contentType:'application/json',
         data:JSON.stringify({ 'led' : g_led_req_params })
-    }).done(data => {}).fail(data => {});
+    }).done(function(data){
+        console.log("api/led post success");
+        console.log("data : " + data);
+    }).fail(data => {});
 }
 const savePicture = () =>{
     for(let x = 0; x < g_led_req_params.length; ++x){
@@ -316,7 +325,10 @@ const postSavedPicture = () =>{
         type:'POST',
         contentType:'application/json',
         data:JSON.stringify(obj)
-    }).done(data => {}).fail(data => {});
+    }).done(function(data){
+        console.log("api/stamp post success");
+        console.log("data : " + data);
+    }).fail(data => {});
 }
 
 function preventDefault(e){
