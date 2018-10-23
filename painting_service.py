@@ -15,7 +15,7 @@ def index():
 
 if __name__ == "__main__":
     response = requests.post('http://127.0.0.1:5001/api/filters',data={})
-    print('response code : ')
     print(response.status_code)
+    print(response.text)
     # webサーバー立ち上げ
     app.run()
