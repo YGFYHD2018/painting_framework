@@ -279,9 +279,6 @@ const postEffect = () =>{
         url:g_localhost + 'api/filters',
         type:'POST',
         contentType:'application/json',
-        xhrFields: {
-            withCredentials: true
-        },
         data:JSON.stringify(json_data)
     }).done(data => {}).fail(data => {});
 }
@@ -295,9 +292,6 @@ const postCells = () => {
         url:g_localhost + 'api/led',
         type:'POST',
         contentType:'application/json',
-        xhrFields: {
-            withCredentials: true
-        },
         data:JSON.stringify({ 'led' : g_led_req_params })
     }).done(data => {}).fail(data => {});
 }
@@ -321,9 +315,6 @@ const postSavedPicture = () =>{
         url:g_localhost + 'api/stamp',
         type:'POST',
         contentType:'application/json',
-        xhrFields: {
-            withCredentials: true
-        },
         data:JSON.stringify(obj)
     }).done(data => {}).fail(data => {});
 }
