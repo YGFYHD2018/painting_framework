@@ -5,7 +5,8 @@ var g_last_update = Date.now();
 var g_saved_stamp_params;
 var g_is_bold_pen_thickness = false;
 const g_icon_path = "static/assets/icon/";
-const g_localhost = "http://127.0.0.1:5001/"
+const g_localhost = "http://painting.local:5001/"
+//const g_localhost = "http://192.168.0.100:5001/"
 const PALLETS = {
     pallet0: { id:"red", color: "red", led: "FF0000" },
     pallet1: { id:"orange", color: "orange", led: "FF4400" },
