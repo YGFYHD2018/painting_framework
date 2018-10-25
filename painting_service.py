@@ -14,7 +14,7 @@ def index():
     return render_template('index.haml')
 
 if __name__ == "__main__":
-    response = requests.post('http://172.27.13.158:5001/api/filters',data={})
+    response = requests.post('http://127.0.0.1:5001/api/filters',data={})
     print(response.status_code)
     print(response.text)
     # webサーバー立ち上げ
