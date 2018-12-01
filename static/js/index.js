@@ -1,10 +1,14 @@
 var g_drawing_buffer = [];
 var g_selected_pallet;
 var g_led_req_params; // Array [16][32]
+var g_led_history_list; //Array [][16][32]
 var g_last_update = Date.now();
 var g_saved_stamp_params;
 var g_is_bold_pen_thickness = false;
 const g_icon_path = "static/assets/icon/";
+const g_color_path = g_icon_path + "color/Draw_to_Like_icon_";
+const g_set_path = g_icon_path + "set/icon_";
+const g_effects_path = g_icon_path + "effects/icon_";
 const g_localhost = "http://painting.local:5001/"
 //const g_localhost = "http://192.168.0.100:5001/"
 const PALLETS = {
@@ -22,23 +26,23 @@ const PALLETS = {
     pallet11: { id:"trash", color: "#88888855", led: "000000" },
 };
 var EFFECTS = {
-    effect0:{frag:false,off: g_icon_path+"perapera_off.png",on: g_icon_path+"perapera_on.png",filter: "filter-wave"},
-    effect1:{frag:false,off: g_icon_path+"jump_off.png",on: g_icon_path+"jump_on.png",filter:"filter-jump"},
-    effect2:{frag:false,off: g_icon_path+"explosion_off.png",on: g_icon_path+"explosion_on.png",filter:"filter-explosion"},
-    effect3:{frag:false,off: g_icon_path+"exile_off.png",on: g_icon_path+"exile_on.png",filter:"filter-exile"},
-    effect4:{frag:false,off: g_icon_path+"rain_off.png",on: g_icon_path+"rain_on.png",filter:"filter-bk-rains"},
+    effect0:{frag:false,off: g_effects_path+"perapera_Off.png",on: g_effects_path+"perapera_On.png",press:g_effects_path+"perapera_Press.png",filter: "filter-wave"},
+    effect1:{frag:false,off: g_effects_path+"jump_Off.png",on: g_effects_path+"jump_On.png",press:g_effects_path+"jump_Press.png",filter:"filter-jump"},
+    effect2:{frag:false,off: g_effects_path+"explosion_Off.png",on: g_effects_path+"explosion_On.png",press:g_effects_path+"explosion_Press.png",filter:"filter-explosion"},
+    effect3:{frag:false,off: g_effects_path+"exile_Off.png",on: g_effects_path+"exile_On.png",press:g_effects_path+"exile_Press.png",filter:"filter-exile"},
+    effect4:{frag:false,off: g_effects_path+"rain_Off.png",on: g_effects_path+"rain_On.png",press:g_effects_path+"rain_Press.png",filter:"filter-bk-rains"},
 };
 var STAMPS = {
-    stamp0:{ off: g_icon_path+"clownfish_off.png",press: g_icon_path+"clownfish_press.png", url:"static/stamps/clownfish.json" },
-    stamp1:{ off: g_icon_path+"rocket_off.png",press: g_icon_path+"rocket_press.png", url:"static/stamps/rocket.json" },
-    stamp2:{ off: g_icon_path+"chicken_off.png",press: g_icon_path+"chicken_press.png", url:"static/stamps/chicken.json" },
-    stamp3:{ off: g_icon_path+"note_off.png",press: g_icon_path+"note_press.png", url:"static/stamps/note.json" },
-    stamp4:{ off: g_icon_path+"dragonfly_off.png",press: g_icon_path+"dragonfly_press.png", url:"static/stamps/dragonfly.json" },
-    stamp5:{ off: g_icon_path+"ladybug_off.png",press: g_icon_path+"ladybug_press.png", url:"static/stamps/ladybug.json" },
-    stamp6:{ off: g_icon_path+"heart_off.png",press: g_icon_path+"heart_press.png", url:"static/stamps/heart.json" },
-    stamp7:{ off: g_icon_path+"chinanago_off.png",press: g_icon_path+"chinanago_press.png", url:"static/stamps/chinanago.json" },
-    stamp8:{ off: g_icon_path+"flamingo_off.png",press: g_icon_path+"flamingo_press.png", url:"static/stamps/flamingo.json" },
-    stamp9:{ off: g_icon_path+"penguin_off.png",press: g_icon_path+"penguin_press.png", url:"static/stamps/penguin.json" },
+    stamp0:{ off: g_set_path+"clownfish_Off.png",press: g_set_path+"clownfishPress.png", url:"static/stamps/clownfish.json" },
+    stamp1:{ off: g_set_path+"rocket_Off.png",press: g_set_path+"rocket_Press.png", url:"static/stamps/rocket.json" },
+    stamp2:{ off: g_set_path+"chicken_Off.png",press: g_set_path+"chicken_Press.png", url:"static/stamps/chicken.json" },
+    stamp3:{ off: g_set_path+"note_Off.png",press: g_set_path+"note_Press.png", url:"static/stamps/note.json" },
+    stamp4:{ off: g_set_path+"dragonfly_Off.png",press: g_set_path+"dragonfly_Press.png", url:"static/stamps/dragonfly.json" },
+    stamp5:{ off: g_set_path+"ladybug_Off.png",press: g_set_path+"ladybug_Press.png", url:"static/stamps/ladybug.json" },
+    stamp6:{ off: g_set_path+"heart_Off.png",press: g_set_path+"heart_Press.png", url:"static/stamps/heart.json" },
+    stamp7:{ off: g_set_path+"chinanago_Off.png",press: g_set_path+"chinanago_Press.png", url:"static/stamps/chinanago.json" },
+    stamp8:{ off: g_set_path+"flamingo_Off.png",press: g_set_path+"flamingo_Press.png", url:"static/stamps/flamingo.json" },
+    stamp9:{ off: g_set_path+"penguin_Off.png",press: g_set_path+"penguin_Press.png", url:"static/stamps/penguin.json" },
 }
 const CELL_WIDTH = 18;
 const CELL_HEIGHT = 18;
@@ -53,10 +57,10 @@ const get_touch_event_key = () => {
 const updatePallet = () =>{
 
     for(let id in PALLETS){
-        const type = id === g_selected_pallet? "on" : "off";
-        const color_path = g_icon_path + PALLETS[id]['id'] + '_' + type + '.png';
+        const type = id === g_selected_pallet? "On" : "Off";
+        const color_path = g_color_path + PALLETS[id]['id'] + '_' + type + '.png';
         $("#" + id).children('img').attr("src", color_path);
-        if(type === "on"){
+        if(type === "On"){
             const pen_type = g_is_bold_pen_thickness? "_L" : "";
             const pen_opposite_type = g_is_bold_pen_thickness? "" : "_L";
             var pen_path = g_icon_path + 'pen' + '_' + PALLETS[id]['id'] + pen_type +'.png';
@@ -371,12 +375,27 @@ function pressTrash(id){
 function endPressTrash(id){
     $("#" + id).children('img').attr("src",g_icon_path + 'trash_off.png');
 }
+function pushHistoryList(){
+    g_led_history_list.push(g_led_req_params);
+}
+function undo(){
+    console.log("call undo()")
+    g_led_req_params = g_led_history_list[g_led_history_list.length -1];
+    g_led_history_list.pop();
+    for(let x = 0; x < g_led_req_params.length; ++x){
+        for(let y = 0; y < g_led_req_params[x].length; ++y){
+            setCellFromColorCode(x,y,g_led_req_params[x][y]);
+        }
+    }
+    postCells();
+}
 $(document).ready(() => {
     disableScroll();
     $("#header").append(
         $("<img>").attr("border", 0).attr("src","static/assets/header/Draw_to_Like_Header.png")
         .attr("width", "768px").attr("height", "96px"));
     $("#cells").on(get_touch_event_key(), event => {
+        pushHistoryList();
         if(g_is_bold_pen_thickness){
             updateCellColorBold(event);
         } else {
@@ -395,6 +414,8 @@ $(document).ready(() => {
         g_led_req_params[x] = new Array(32).fill(0);
         g_saved_stamp_params[x] = new Array(32).fill(0);
     }
+    g_led_history_list = [g_led_history_list];
+    pushHistoryList();
     clearCells();
     setPenThickness();
     for(let id in PALLETS){
