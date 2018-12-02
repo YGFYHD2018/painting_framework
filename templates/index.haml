@@ -12,6 +12,9 @@
     %title=title
   %body style= "background-image: url(/static/assets/bg/Draw_to_Like_bg_Min.png);" 
     %nav#header
+    %div#trash
+    %div#undo
+    %div#redo
     %table#main
       %tr
         %td
@@ -40,18 +43,18 @@
         %td
           %div class='pen' id="pen_thin"
           %table#pallets_1
-            {% for y in range(6): %}
+            {% for y in range(5): %}
             %tr
               %td
-                %div id="pallet{{y + 6 * 0}}"
+                %div id="pallet{{y + 5 * 0}}"
             {% endfor %}
         %td
-          %div class='pen' id="pen_bold"
+          %div class='pen' id="eraser"
           %table#pallets_2
-            {% for y in range(6): %}
+            {% for y in range(5): %}
             %tr
               %td
-                %div id="pallet{{y + 6 * 1}}"
+                %div id="pallet{{y + 5 * 1}}"
             {% endfor %}
     %table#effects
       %tr

@@ -9,6 +9,8 @@ const g_icon_path = "static/assets/icon/";
 const g_color_path = g_icon_path + "color/Draw_to_Like_icon_";
 const g_set_path = g_icon_path + "set/icon_";
 const g_effects_path = g_icon_path + "effects/icon_";
+const g_tools_path = g_icon_path + "tools/Draw_to_Like_icon_"
+const g_pen_path = g_icon_path + "pen/Draw_to_like_pen_"
 const g_localhost = "http://painting.local:5001/"
 //const g_localhost = "http://192.168.0.100:5001/"
 const PALLETS = {
@@ -17,11 +19,11 @@ const PALLETS = {
     pallet2: { id:"yellow", color: "yellow", led: "FF8800" },
     pallet3: { id:"green", color: "green", led: "00FF00" },
     pallet4: { id:"blue", color: "blue", led: "0000FF" },
-    pallet5: { id:"violet", color: "violet", led: "FF00FF" },
-    pallet6: { id:"pink", color: "pink", led: "FF0088" },
-    pallet7: { id:"lightgreen", color: "lightgreen", led: "FFFF00" },
-    pallet8: { id:"aqua", color: "aqua", led: "00FFFF" },
-    pallet9: { id:"white", color: "white", led: "FFFFFF" },
+    pallet5: { id:"pink", color: "pink", led: "FF0088" },
+    pallet6: { id:"lightgreen", color: "lightgreen", led: "FFFF00" },
+    pallet7: { id:"aqua", color: "aqua", led: "00FFFF" },
+    pallet8: { id:"white", color: "white", led: "FFFFFF" },
+    pallet9: { id:"violet", color: "violet", led: "FF00FF" },
     pallet10: { id:"eraser", color: "#88888855", led: "000000" },
     pallet11: { id:"trash", color: "#88888855", led: "000000" },
 };
@@ -33,7 +35,7 @@ var EFFECTS = {
     effect4:{frag:false,off: g_effects_path+"rain_Off.png",on: g_effects_path+"rain_On.png",press:g_effects_path+"rain_Press.png",filter:"filter-bk-rains"},
 };
 var STAMPS = {
-    stamp0:{ off: g_set_path+"clownfish_Off.png",press: g_set_path+"clownfishPress.png", url:"static/stamps/clownfish.json" },
+    stamp0:{ off: g_set_path+"clownfish_Off.png",press: g_set_path+"clownfish_Press.png", url:"static/stamps/clownfish.json" },
     stamp1:{ off: g_set_path+"rocket_Off.png",press: g_set_path+"rocket_Press.png", url:"static/stamps/rocket.json" },
     stamp2:{ off: g_set_path+"chicken_Off.png",press: g_set_path+"chicken_Press.png", url:"static/stamps/chicken.json" },
     stamp3:{ off: g_set_path+"note_Off.png",press: g_set_path+"note_Press.png", url:"static/stamps/note.json" },
@@ -43,6 +45,12 @@ var STAMPS = {
     stamp7:{ off: g_set_path+"chinanago_Off.png",press: g_set_path+"chinanago_Press.png", url:"static/stamps/chinanago.json" },
     stamp8:{ off: g_set_path+"flamingo_Off.png",press: g_set_path+"flamingo_Press.png", url:"static/stamps/flamingo.json" },
     stamp9:{ off: g_set_path+"penguin_Off.png",press: g_set_path+"penguin_Press.png", url:"static/stamps/penguin.json" },
+}
+var TOOLS = {
+    undo:{off: g_tools_path+"undo_Off.png", press: g_tools_path+"undo_Press.png",method:undo()},
+    redo:{off: g_tools_path+"redo_Off.png", press: g_tools_path+"redo_Press.png",method:redo()},
+    trash:{off: g_tools_path+"trash_Off.png", press: g_tools_path+"trash_Press.png",method:trash()},
+    eraser:{off: g_tools_path+"eraser_Off.png", press: g_tools_path+"eraser_Press.png",method:eraser()},
 }
 const CELL_WIDTH = 18;
 const CELL_HEIGHT = 18;
@@ -63,7 +71,7 @@ const updatePallet = () =>{
         if(type === "On"){
             const pen_type = g_is_bold_pen_thickness? "_L" : "";
             const pen_opposite_type = g_is_bold_pen_thickness? "" : "_L";
-            var pen_path = g_icon_path + 'pen' + '_' + PALLETS[id]['id'] + pen_type +'.png';
+            var pen_path = g_pen_path + PALLETS[id]['id'] +'.png';
             var pen_opposite_path = ''
 
             if(PALLETS[id]['id'] === 'eraser'){
@@ -344,17 +352,17 @@ function disableScroll(){
     document.body.addEventListener('touchmove', preventDefault, { passive: false });
 }
 function setPenThickness() {
-    const img_bold = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_off_L.png").attr("width", "50px").attr("height", "50px");
+    // const img_bold = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_off_L.png").attr("width", "50px").attr("height", "50px");
     const img_thin = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_red.png").attr("width", "50px").attr("height", "50px");
     $("#pen_thin").on(get_touch_event_key(),event =>{ 
         g_is_bold_pen_thickness=false;
         updatePallet();
     }).append(img_thin);
     
-    $("#pen_bold").on(get_touch_event_key(),event => {
-        g_is_bold_pen_thickness=true;
-        updatePallet();
-    }).append(img_bold);
+    // $("#pen_bold").on(get_touch_event_key(),event => {
+    //     g_is_bold_pen_thickness=true;
+    //     updatePallet();
+    // }).append(img_bold);
 }
 function clearEffects() {
     for(let id in EFFECTS){
@@ -378,6 +386,12 @@ function endPressTrash(id){
 function pushHistoryList(){
     g_led_history_list.push(g_led_req_params);
 }
+function pressTool(id){
+    $("#" + id).children('img').attr("src",TOOLS[id].press);
+}
+function endPressTool(id){
+    $("#" + id).children('img').attr("src",TOOLS[id].off);
+}
 function undo(){
     console.log("call undo()")
     g_led_req_params = g_led_history_list[g_led_history_list.length -1];
@@ -388,6 +402,10 @@ function undo(){
         }
     }
     postCells();
+}
+function trash() {
+    clearCells();
+    clearEffects();
 }
 $(document).ready(() => {
     disableScroll();
@@ -423,12 +441,19 @@ $(document).ready(() => {
         obj.addClass("pallet");
         if(id === "pallet11"){
             const img = $("<img>").attr("border", 0).attr("src", "static/assets/trash.png").attr("width", "62.5px").attr("height", "62.5px");
-            obj.on(get_touch_event_key(),event => {clearCells(),clearEffects(),pressTrash(id)}).
-            on("touchend",event => endPressTrash(id)).append(img);
+            obj.on(get_touch_event_key(),event => {clearCells(),clearEffects(),pressTool(id)}).
+            on("touchend",event => endPressTool(id)).append(img);
         } else {
             const img = $("<img>").attr("border", 0).attr("src", "static/assets/eraser.png").attr("width", "62.5px").attr("height", "62.5px");
             obj.on(get_touch_event_key(), event => setPallet(id)).on("touchmove", event => setPallet(id)).append(img);
         }
+    }
+    for(let id in TOOLS){
+        const obj = $("#" + id);
+        const off = TOOLS[id].off;
+        const img = $("<img>").attr("border", 0).attr("src",off).attr("width", "87.5px").attr("height", "96px");
+        obj.on(get_touch_event_key(),event => {clearCells(),clearEffects(),pressTool(id)}).
+        on("touchend",event => endPressTool(id)).append(img);
     }
     for(let id in EFFECTS){
         const obj = $("#" + id);
