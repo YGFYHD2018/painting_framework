@@ -1,7 +1,8 @@
 var g_drawing_buffer = [];
 var g_selected_pallet;
 var g_led_req_params; // Array [16][32]
-var g_led_history_list; //Array [][16][32]
+var g_led_history_list = []; //Array [][16][32]
+var g_led_history_index = 0;
 var g_last_update = Date.now();
 var g_saved_stamp_params;
 var g_is_bold_pen_thickness = false;
@@ -47,10 +48,10 @@ var STAMPS = {
     stamp9:{ off: g_set_path+"penguin_Off.png",press: g_set_path+"penguin_Press.png", url:"static/stamps/penguin.json" },
 }
 var TOOLS = {
-    undo:{off: g_tools_path+"undo_Off.png", press: g_tools_path+"undo_Press.png",method:undo()},
-    redo:{off: g_tools_path+"redo_Off.png", press: g_tools_path+"redo_Press.png",method:redo()},
-    trash:{off: g_tools_path+"trash_Off.png", press: g_tools_path+"trash_Press.png",method:trash()},
-    eraser:{off: g_tools_path+"eraser_Off.png", press: g_tools_path+"eraser_Press.png",method:eraser()},
+    undo:{off: g_tools_path+"undo_Off.png", press: g_tools_path+"undo_Press.png"},
+    redo:{off: g_tools_path+"redo_Off.png", press: g_tools_path+"redo_Press.png"},
+    trash:{off: g_tools_path+"trash_Off.png", press: g_tools_path+"trash_Press.png"},
+    eraser:{off: g_tools_path+"eraser_Off.png", press: g_tools_path+"eraser_Press.png"},
 }
 const CELL_WIDTH = 18;
 const CELL_HEIGHT = 18;
@@ -63,7 +64,6 @@ const get_touch_event_key = () => {
     return is_mobile_dvice() ? "touchstart" : "click";
 }
 const updatePallet = () =>{
-
     for(let id in PALLETS){
         const type = id === g_selected_pallet? "On" : "Off";
         const color_path = g_color_path + PALLETS[id]['id'] + '_' + type + '.png';
@@ -73,15 +73,16 @@ const updatePallet = () =>{
             const pen_opposite_type = g_is_bold_pen_thickness? "" : "_L";
             var pen_path = g_pen_path + PALLETS[id]['id'] +'.png';
             var pen_opposite_path = ''
-
+            if(PALLETS[id]['id'] != 'eraser'){
+                offEraser();
+            }
             if(PALLETS[id]['id'] === 'eraser'){
-                pen_path = g_icon_path + 'eraser_on.png';
+                pen_path = g_pen_path + 'white.png';
                 pen_opposite_path = g_icon_path + 'eraser_off.png';
             }
             else{
                 pen_opposite_path = g_icon_path + 'pen' + '_off' + pen_opposite_type + '.png';
             }
-
             // change pen color
             if(g_is_bold_pen_thickness === false){
                 $("#pen_thin").children('img').attr('src', pen_path);
@@ -98,6 +99,7 @@ const updatePallet = () =>{
 
 const setPallet = pallet => {
     g_selected_pallet = pallet;
+    g_is_eraser = false;
     updatePallet();
 }
 const setEffect = effect => {
@@ -208,14 +210,16 @@ const setCell = (x, y, pallet) => {
 }
 
 const setCellFromColorCode = (x, y, colorCode) =>{
+    console.log("call setCellFromColorCode()");
     if(!isInRangeOfCanvas(x, y)){
+        console.log("isInRangOfCanvas() == false");
         return
     }
     g_led_req_params[x][y] = colorCode;
     g_drawing_buffer.push({ 'x' : x, 'y': y, 'color': g_led_req_params[x][y] })
     const id = "#cell_" + x + "_" + y;
     if(colorCode == "000000"){
-        colorCode = "transparent";
+        colorCode = "#88888855";
     }
     $(id).css("background-color", colorCode);
 }
@@ -376,36 +380,92 @@ function pressStamp(id) {
 }
 function endPressStamp(id){
     $("#" + id).children('img').attr("src",STAMPS[id].off);
+    addHistoryList();
 }
-function pressTrash(id){
-    $("#" + id).children('img').attr("src",g_icon_path + 'trash_on.png');
-}
-function endPressTrash(id){
-    $("#" + id).children('img').attr("src",g_icon_path + 'trash_off.png');
-}
-function pushHistoryList(){
-    g_led_history_list.push(g_led_req_params);
+function addHistoryList(){
+    console.log("call addHistoryList()");
+    console.log("g_led_history_list : ");
+    console.log(g_led_history_list);
+    var length = g_led_history_list.length;
+    g_led_history_list.splice(g_led_history_index,length - g_led_history_index - 1);
+    ++g_led_history_index;
+    params = new Array(16);
+    for(let x = 0; x < g_led_req_params.length; ++x){
+        params[x] = new Array(32);
+        for(let y = 0; y < g_led_req_params[x].length; ++y){
+            params[x][y] = g_led_req_params[x][y];
+        }
+    }
+    g_led_history_list[g_led_history_index] = params;
 }
 function pressTool(id){
+    console.log("call pressTool()");
     $("#" + id).children('img').attr("src",TOOLS[id].press);
+    if(id == "trash"){
+        trash();
+    } else if (id == "undo"){
+        undo();
+    } else if(id == "redo"){
+        redo();
+    } else if(id == "eraser"){
+        eraser();
+    }
 }
 function endPressTool(id){
+    if(id = "eraser") {
+        $("#" + id).children('img').attr("src",g_tools_path + "eraser_On.png");
+        return;
+    }
+    $("#" + id).children('img').attr("src",TOOLS[id].off);
+}
+function offEraser(){
+    var id = "eraser"
     $("#" + id).children('img').attr("src",TOOLS[id].off);
 }
 function undo(){
-    console.log("call undo()")
-    g_led_req_params = g_led_history_list[g_led_history_list.length -1];
-    g_led_history_list.pop();
-    for(let x = 0; x < g_led_req_params.length; ++x){
-        for(let y = 0; y < g_led_req_params[x].length; ++y){
-            setCellFromColorCode(x,y,g_led_req_params[x][y]);
+    console.log("call undo()");
+    console.log("index : "+ g_led_history_index);
+    console.log("hitory_list :");
+    console.log(g_led_history_list);
+    var params = g_led_history_list[g_led_history_index];
+    for(let x = 0; x < params.length; ++x){
+        for(let y = 0; y < params[x].length; ++y){
+            setCell(x,y,getPalletFromCell(params[x][y]));
         }
     }
+    g_led_history_index--;
     postCells();
 }
+function getPalletFromCell(param) {
+    for(let id in PALLETS){
+        if(param == PALLETS[id].led) {
+            return id;
+        }
+    }
+}
+function redo() {
+    console.log("call redo()");
+    console.log("index : "+ g_led_history_index);
+    console.log("list.length : " + g_led_history_list.length);
+    if(g_led_history_index == (g_led_history_list.length -1)){
+        return;
+    }
+    ++g_led_history_index;
+    var params = g_led_history_list[g_led_history_index];
+    for(let x = 0; x < params.length; ++x){
+        for(let y = 0; y < params[x].length; ++y){
+            setCell(x,y,getPalletFromCell(params[x][y]));
+        }
+    }
+}
 function trash() {
+    console.log("call trash()");
     clearCells();
     clearEffects();
+}
+function eraser() {
+    console.log("call eraser()");
+    setPallet("pallet10");
 }
 $(document).ready(() => {
     disableScroll();
@@ -413,7 +473,7 @@ $(document).ready(() => {
         $("<img>").attr("border", 0).attr("src","static/assets/header/Draw_to_Like_Header.png")
         .attr("width", "768px").attr("height", "96px"));
     $("#cells").on(get_touch_event_key(), event => {
-        pushHistoryList();
+        addHistoryList();
         if(g_is_bold_pen_thickness){
             updateCellColorBold(event);
         } else {
@@ -428,12 +488,12 @@ $(document).ready(() => {
     });
     g_led_req_params = new Array(16);
     g_saved_stamp_params = new Array(16);
+    g_led_history_list[g_led_history_index] = new Array(16);
     for(let x = 0; x < g_led_req_params.length; ++x) {
         g_led_req_params[x] = new Array(32).fill(0);
         g_saved_stamp_params[x] = new Array(32).fill(0);
+        g_led_history_list[g_led_history_index][x] = new Array(32).fill(0);
     }
-    g_led_history_list = [g_led_history_list];
-    pushHistoryList();
     clearCells();
     setPenThickness();
     for(let id in PALLETS){
@@ -451,8 +511,12 @@ $(document).ready(() => {
     for(let id in TOOLS){
         const obj = $("#" + id);
         const off = TOOLS[id].off;
+        
         const img = $("<img>").attr("border", 0).attr("src",off).attr("width", "87.5px").attr("height", "96px");
-        obj.on(get_touch_event_key(),event => {clearCells(),clearEffects(),pressTool(id)}).
+        if(id == "eraser"){
+            img.attr("width","68px").attr("height","74px");
+        }
+        obj.on(get_touch_event_key(),event => {pressTool(id)}).
         on("touchend",event => endPressTool(id)).append(img);
     }
     for(let id in EFFECTS){
@@ -465,10 +529,11 @@ $(document).ready(() => {
         const obj =$("#" + id);
         const off = STAMPS[id].off;
         const img = $("<img>").attr("border", 0).attr("src", off).attr("width", "66px").attr("height", "66px");
-        obj.addClass("stamp").on(get_touch_event_key(),event => {setStamp(id),pressStamp(id)}).
+        obj.addClass("stamp").on(get_touch_event_key(),event => {setStamp(id),pressStamp(id),addHistoryList()}).
         on("touchend",event => endPressStamp(id)).append(img);
     }
     setPallet("pallet0");
+    $("#pen_thin").on(get_touch_event_key(),event =>{setPallet("pallet0")});
     updateWindow();
     $(window).resize(() => {
         updateWindow();
