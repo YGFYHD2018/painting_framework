@@ -387,7 +387,7 @@ function addHistoryList(){
     console.log("g_led_history_list : ");
     console.log(g_led_history_list);
     var length = g_led_history_list.length;
-    g_led_history_list.splice(g_led_history_index,length - g_led_history_index - 1);
+    g_led_history_list.splice(g_led_history_index + 1,length - g_led_history_index);
     ++g_led_history_index;
     params = new Array(16);
     for(let x = 0; x < g_led_req_params.length; ++x){
@@ -427,13 +427,13 @@ function undo(){
     console.log("index : "+ g_led_history_index);
     console.log("hitory_list :");
     console.log(g_led_history_list);
+    g_led_history_index--;
     var params = g_led_history_list[g_led_history_index];
     for(let x = 0; x < params.length; ++x){
         for(let y = 0; y < params[x].length; ++y){
             setCell(x,y,getPalletFromCell(params[x][y]));
         }
     }
-    g_led_history_index--;
     postCells();
 }
 function getPalletFromCell(param) {
@@ -473,7 +473,6 @@ $(document).ready(() => {
         $("<img>").attr("border", 0).attr("src","static/assets/header/Draw_to_Like_Header.png")
         .attr("width", "768px").attr("height", "96px"));
     $("#cells").on(get_touch_event_key(), event => {
-        addHistoryList();
         if(g_is_bold_pen_thickness){
             updateCellColorBold(event);
         } else {
@@ -485,7 +484,7 @@ $(document).ready(() => {
         } else {
             updateCellColor(event);
         }
-    });
+    }).on("touchend",event => addHistoryList());
     g_led_req_params = new Array(16);
     g_saved_stamp_params = new Array(16);
     g_led_history_list[g_led_history_index] = new Array(16);
@@ -529,7 +528,7 @@ $(document).ready(() => {
         const obj =$("#" + id);
         const off = STAMPS[id].off;
         const img = $("<img>").attr("border", 0).attr("src", off).attr("width", "66px").attr("height", "66px");
-        obj.addClass("stamp").on(get_touch_event_key(),event => {setStamp(id),pressStamp(id),addHistoryList()}).
+        obj.addClass("stamp").on(get_touch_event_key(),event => {setStamp(id),pressStamp(id)}).
         on("touchend",event => endPressStamp(id)).append(img);
     }
     setPallet("pallet0");
