@@ -64,6 +64,7 @@ const get_touch_event_key = () => {
     return is_mobile_dvice() ? "touchstart" : "click";
 }
 const updatePallet = () =>{
+    console.log("call updatePallet()");
     for(let id in PALLETS){
         const type = id === g_selected_pallet? "On" : "Off";
         const color_path = g_color_path + PALLETS[id]['id'] + '_' + type + '.png';
@@ -78,7 +79,7 @@ const updatePallet = () =>{
             }
             if(PALLETS[id]['id'] === 'eraser'){
                 pen_path = g_pen_path + 'white.png';
-                pen_opposite_path = g_icon_path + 'eraser_off.png';
+                pen_opposite_path = g_icon_path + 'eraser_On.png';
             }
             else{
                 pen_opposite_path = g_icon_path + 'pen' + '_off' + pen_opposite_type + '.png';
@@ -412,7 +413,7 @@ function pressTool(id){
     }
 }
 function endPressTool(id){
-    if(id = "eraser") {
+    if(id == "eraser") {
         $("#" + id).children('img').attr("src",g_tools_path + "eraser_On.png");
         return;
     }
@@ -462,6 +463,7 @@ function trash() {
     console.log("call trash()");
     clearCells();
     clearEffects();
+    addHistoryList();
 }
 function eraser() {
     console.log("call eraser()");
