@@ -1,8 +1,66 @@
+//
+// Stack (LIFO)
+//
+
+function History(maxSize) {
+    this.__a = new Array();
+    this.__max = maxSize;
+    this.__current = -1; 
+}
+
+History.prototype.push = function(o) {
+    this.__a.splice( this.__current + 1, this.__a.length - this.__current, o);
+    if (this.__a.length > this.__max){
+        this.dequeue();
+    }
+    this.__current = this.__a.length -1;
+}
+
+History.prototype.forward = function() {
+    ret = null;
+    if(this.__a.length > this.__current + 1){
+        this.__current++;
+        ret = this.__a[this.__current];
+    }
+    return ret
+}
+
+History.prototype.backward = function() {
+    ret = null;
+	if( this.__current > 0 ) {
+        this.__current--;
+        ret = this.__a[this.__current];
+	}
+    return ret;
+}
+
+History.prototype.dequeue = function() {
+    ret = null;
+	if( this.__a.length > 0 ) {
+		ret = this.__a.shift();
+    }
+    this.__current = this.__a.length -1
+	return ret;
+}
+
+History.prototype.size = function() {
+	return this.__a.length;
+}
+
+History.prototype.toString = function() {
+	return '[' + this.__a.join(',') + ']';
+}
+
+
 var g_drawing_buffer = [];
 var g_selected_pallet;
 var g_led_req_params; // Array [16][32]
-var g_led_history_list = []; //Array [][16][32]
-var g_led_history_index = 0;
+
+
+
+//var g_led_history_list = new History(5)
+var g_led_history_list = new History(1000)
+
 var g_last_update = Date.now();
 var g_saved_stamp_params;
 var g_is_bold_pen_thickness = false;
@@ -358,7 +416,7 @@ function disableScroll(){
 }
 function setPenThickness() {
     // const img_bold = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_off_L.png").attr("width", "50px").attr("height", "50px");
-    const img_thin = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_red.png").attr("width", "50px").attr("height", "50px");
+    const img_thin = $("<img>").attr("border", 0).attr("src", g_icon_path+"pen_red.png").attr("width", "74px").attr("height", "74px");
     $("#pen_thin").on(get_touch_event_key(),event =>{ 
         g_is_bold_pen_thickness=false;
         updatePallet();
@@ -387,9 +445,8 @@ function addHistoryList(){
     console.log("call addHistoryList()");
     console.log("g_led_history_list : ");
     console.log(g_led_history_list);
-    var length = g_led_history_list.length;
-    g_led_history_list.splice(g_led_history_index + 1,length - g_led_history_index);
-    ++g_led_history_index;
+
+
     params = new Array(16);
     for(let x = 0; x < g_led_req_params.length; ++x){
         params[x] = new Array(32);
@@ -397,8 +454,9 @@ function addHistoryList(){
             params[x][y] = g_led_req_params[x][y];
         }
     }
-    g_led_history_list[g_led_history_index] = params;
+    g_led_history_list.push(params)
 }
+
 function pressTool(id){
     console.log("call pressTool()");
     $("#" + id).children('img').attr("src",TOOLS[id].press);
@@ -425,11 +483,10 @@ function offEraser(){
 }
 function undo(){
     console.log("call undo()");
-    console.log("index : "+ g_led_history_index);
-    console.log("hitory_list :");
-    console.log(g_led_history_list);
-    g_led_history_index--;
-    var params = g_led_history_list[g_led_history_index];
+    var params = g_led_history_list.backward()
+    if(params === null){
+        return;
+    }
     for(let x = 0; x < params.length; ++x){
         for(let y = 0; y < params[x].length; ++y){
             setCell(x,y,getPalletFromCell(params[x][y]));
@@ -445,14 +502,10 @@ function getPalletFromCell(param) {
     }
 }
 function redo() {
-    console.log("call redo()");
-    console.log("index : "+ g_led_history_index);
-    console.log("list.length : " + g_led_history_list.length);
-    if(g_led_history_index == (g_led_history_list.length -1)){
+    var params = g_led_history_list.forward();
+    if(params === null){
         return;
     }
-    ++g_led_history_index;
-    var params = g_led_history_list[g_led_history_index];
     for(let x = 0; x < params.length; ++x){
         for(let y = 0; y < params[x].length; ++y){
             setCell(x,y,getPalletFromCell(params[x][y]));
@@ -489,12 +542,13 @@ $(document).ready(() => {
     }).on("touchend",event => addHistoryList());
     g_led_req_params = new Array(16);
     g_saved_stamp_params = new Array(16);
-    g_led_history_list[g_led_history_index] = new Array(16);
+    let initialdata = new Array(16);
     for(let x = 0; x < g_led_req_params.length; ++x) {
         g_led_req_params[x] = new Array(32).fill(0);
         g_saved_stamp_params[x] = new Array(32).fill(0);
-        g_led_history_list[g_led_history_index][x] = new Array(32).fill(0);
+        initialdata[x] = new Array(32).fill(0);
     }
+    g_led_history_list.push(initialdata)
     clearCells();
     setPenThickness();
     for(let id in PALLETS){
